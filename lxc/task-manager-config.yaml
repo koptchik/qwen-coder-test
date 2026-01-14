@@ -1,0 +1,40 @@
+# LXC Container Configuration for Task Manager System
+
+# Basic container settings
+name: task-manager-sysadmin
+image: ubuntu/22.04
+profiles:
+  - default
+
+# Resources allocation
+limits:
+  memory: 1GB
+  cpu: 2
+
+# Network configuration
+devices:
+  eth0:
+    name: eth0
+    type: nic
+    nictype: bridged
+    parent: lxdbr0
+    hwaddr: ""
+  
+  root:
+    type: disk
+    path: /
+    pool: default
+
+# Mount points
+extra_mounts:
+  - source: /var/lib/taskmanager/data
+    destination: /app/db
+    fstype: ext4
+    options: ["rw", "bind"]
+
+config:
+  # Enable systemd
+  raw.idmap: |
+    both {{UID}} 0
+  security.nesting: "false"
+  security.privileged: "false"
