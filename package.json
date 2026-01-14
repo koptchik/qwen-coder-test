@@ -1,0 +1,28 @@
+{
+  "name": "task-manager-sysadmin",
+  "version": "1.0.0",
+  "description": "Task manager system for system administrators with LXC container deployment",
+  "main": "api/server.js",
+  "scripts": {
+    "start": "node api/server.js",
+    "dev": "nodemon api/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "task-manager",
+    "sysadmin",
+    "lxc",
+    "sqlite",
+    "react"
+  ],
+  "author": "SysAdmin Task Manager Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "sqlite3": "^5.1.6",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

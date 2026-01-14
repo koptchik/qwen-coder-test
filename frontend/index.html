@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager для SysAdmin</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            color: #333;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #ffffff;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        /* Навигация */
+        .navbar {
+            background-color: #006400; /* Тёмно-зелёный */
+            padding: 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .nav-list {
+            display: flex;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            flex-wrap: wrap;
+        }
+        
+        .nav-item {
+            position: relative;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 15px 20px;
+            display: block;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+        
+        .nav-link:hover {
+            background-color: #004d00; /* Ещё темнее */
+        }
+        
+        .nav-link.active {
+            background-color: #ff8c00; /* Тёмно-оранжевый */
+            color: white;
+        }
+        
+        /* Основной контент */
+        .content-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 400px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .sidebar-header {
+            padding: 20px;
+            background-color: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .sidebar-header h2 {
+            font-size: 1.5rem;
+            color: #006400;
+        }
+        
+        .controls {
+            padding: 15px;
+            background-color: white;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .control-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+            white-space: nowrap;
+        }
+        
+        .btn-primary {
+            background-color: #006400;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #004d00;
+        }
+        
+        .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background-color: #27ae60;
+        }
+        
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .btn-orange {
+            background-color: #ff8c00;
+            color: white;
+        }
+        
+        .btn-orange:hover {
+            background-color: #e67e00;
+        }
+        
+        select, input {
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .task-tree {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+        
+        .task-item {
+            background-color: white;
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid #006400;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .task-item:hover {
+            background-color: #f1f3f5;
+            transform: translateX(5px);
+        }
+        
+        .task-item.selected {
+            background-color: #e8f5e9;
+            border-left: 3px solid #ff8c00;
+        }
+        
+        .task-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #212529;
+        }
+        
+        .task-meta {
+            font-size: 12px;
+            color: #6c757d;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-new { background-color: #e8f5e9; color: #2e7d32; }
+        .status-in-progress { background-color: #fff8e1; color: #f57f17; }
+        .status-completed { background-color: #e8f5e9; color: #2e7d32; }
+        .status-blocked { background-color: #ffebee; color: #c62828; }
+        
+        .priority-badge {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .priority-low { background-color: #e8f5e9; color: #2e7d32; }
+        .priority-medium { background-color: #fff8e1; color: #f57f17; }
+        .priority-high { background-color: #ffebee; color: #c62828; }
+        .priority-critical { background-color: #ffcdd2; color: #b71c1c; }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: #ffffff;
+        }
+        
+        .task-details {
+            padding: 25px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .details-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #006400;
+        }
+        
+        .details-header h1 {
+            color: #006400;
+            margin-bottom: 10px;
+        }
+        
+        .details-meta {
+            display: flex;
+            gap: 20px;
+            color: #6c757d;
+            font-size: 14px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .meta-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .meta-label {
+            font-weight: bold;
+            color: #495057;
+            margin-bottom: 2px;
+        }
+        
+        .details-description {
+            margin: 20px 0;
+            line-height: 1.6;
+            color: #212529;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #006400;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #495057;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .form-col {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .history-section {
+            margin: 25px 0;
+        }
+        
+        .history-section h3 {
+            margin-bottom: 15px;
+            color: #006400;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .history-item {
+            background-color: #f8f9fa;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 6px;
+            border-left: 3px solid #006400;
+        }
+        
+        .history-meta {
+            font-size: 12px;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+        
+        .comments-section {
+            margin-top: 25px;
+        }
+        
+        .comment-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 14px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .link-hint {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+            font-style: italic;
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #6c757d;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 20px;
+            color: #adb5bd;
+        }
+        
+        .empty-state p {
+            font-size: 18px;
+            max-width: 400px;
+        }
+        
+        .task-item.subtask {
+            background-color: #f1f3f5;
+            margin-left: 20px;
+            border-left: 3px solid #6c757d;
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: absolute;
+                z-index: 10;
+                height: 100%;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            
+            .content-container {
+                flex-direction: column;
+            }
+            
+            .main-content {
+                padding-top: 60px;
+            }
+            
+            .menu-toggle {
+                display: block;
+                position: absolute;
+                top: 15px;
+                left: 15px;
+                background: #006400;
+                color: white;
+                border: none;
+                padding: 8px 12px;
+                border-radius: 4px;
+                z-index: 20;
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .form-col {
+                min-width: 100%;
+            }
+        }
+        
+        @media (min-width: 769px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+        
+        .assignee-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            background-color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
+        
+        // API Functions
+        const fetchTasks = async (filter = 'all') => {
+            try {
+                const response = await fetch(`/api/tasks${filter ? `?filter=${filter}` : ''}`);
+                const tasks = await response.json();
+                return tasks;
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+                return [];
+            }
+        };
+
+        const createTask = async (taskData) => {
+            try {
+                const response = await fetch('/api/tasks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(taskData)
+                });
+                const newTask = await response.json();
+                return newTask;
+            } catch (error) {
+                console.error('Error creating task:', error);
+                return null;
+            }
+        };
+
+        const updateTask = async (taskId, taskData) => {
+            try {
+                const response = await fetch(`/api/tasks/${taskId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(taskData)
+                });
+                const updatedTask = await response.json();
+                return updatedTask;
+            } catch (error) {
+                console.error('Error updating task:', error);
+                return null;
+            }
+        };
+
+        const deleteTask = async (taskId) => {
+            try {
+                const response = await fetch(`/api/tasks/${taskId}`, {
+                    method: 'DELETE'
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error deleting task:', error);
+                return null;
+            }
+        };
+
+        const fetchTeamMembers = async () => {
+            try {
+                const response = await fetch('/api/team-members');
+                const teamMembers = await response.json();
+                return teamMembers;
+            } catch (error) {
+                console.error('Error fetching team members:', error);
+                return [];
+            }
+        };
+
+        const fetchStatusOptions = async () => {
+            try {
+                const response = await fetch('/api/status-options');
+                const statusOptions = await response.json();
+                return statusOptions;
+            } catch (error) {
+                console.error('Error fetching status options:', error);
+                return [];
+            }
+        };
+
+        const fetchPriorityOptions = async () => {
+            try {
+                const response = await fetch('/api/priority-options');
+                const priorityOptions = await response.json();
+                return priorityOptions;
+            } catch (error) {
+                console.error('Error fetching priority options:', error);
+                return [];
+            }
+        };
+
+        const fetchTaskHistory = async (taskId) => {
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/history`);
+                const history = await response.json();
+                return history;
+            } catch (error) {
+                console.error('Error fetching task history:', error);
+                return [];
+            }
+        };
+
+        const addCommentToTask = async (taskId, commentData) => {
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/comments`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(commentData)
+                });
+                const comment = await response.json();
+                return comment;
+            } catch (error) {
+                console.error('Error adding comment:', error);
+                return null;
+            }
+        };
+
+        const fetchTaskComments = async (taskId) => {
+            try {
+                const response = await fetch(`/api/tasks/${taskId}/comments`);
+                const comments = await response.json();
+                return comments;
+            } catch (error) {
+                console.error('Error fetching comments:', error);
+                return [];
+            }
+        };
+
+        const navItems = [
+            { name: 'Главная', path: '/' },
+            { name: 'Задачи', path: '/tasks', active: true },
+            { name: 'Новости', path: '/news' },
+            { name: 'База знаний', path: '/kb' },
+            { name: 'Серверы', path: '/servers' },
+            { name: 'Пользователи', path: '/users' },
+            { name: 'Отчеты', path: '/reports' }
+        ];
+
+        function TaskManager() {
+            const [tasks, setTasks] = useState([]);
+            const [selectedTask, setSelectedTask] = useState(null);
+            const [filter, setFilter] = useState('all');
+            const [grouping, setGrouping] = useState('none');
+            const [newTaskTitle, setNewTaskTitle] = useState('');
+            const [newTaskParent, setNewTaskParent] = useState(null);
+            const [comments, setComments] = useState({});
+            const [newComment, setNewComment] = useState('');
+            const [sidebarOpen, setSidebarOpen] = useState(false);
+            const [teamMembers, setTeamMembers] = useState([]);
+            const [statusOptions, setStatusOptions] = useState([]);
+            const [priorityOptions, setPriorityOptions] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [history, setHistory] = useState([]);
+
+            // Load initial data
+            useEffect(() => {
+                const loadData = async () => {
+                    setLoading(true);
+                    
+                    // Fetch all required data
+                    const [tasksData, members, statuses, priorities] = await Promise.all([
+                        fetchTasks(filter),
+                        fetchTeamMembers(),
+                        fetchStatusOptions(),
+                        fetchPriorityOptions()
+                    ]);
+                    
+                    setTasks(tasksData);
+                    setTeamMembers(members);
+                    setStatusOptions(statuses);
+                    setPriorityOptions(priorities);
+                    
+                    // Select first task if available
+                    if (tasksData.length > 0 && !selectedTask) {
+                        setSelectedTask(tasksData[0]);
+                    }
+                    
+                    setLoading(false);
+                };
+                
+                loadData();
+            }, [filter]);
+
+            // Refresh task when selected task ID changes
+            useEffect(() => {
+                if (selectedTask) {
+                    const refreshTask = async () => {
+                        try {
+                            const response = await fetch(`/api/tasks/${selectedTask.id}`);
+                            const refreshedTask = await response.json();
+                            setSelectedTask(refreshedTask);
+                            
+                            // Load comments for the selected task
+                            const taskComments = await fetchTaskComments(selectedTask.id);
+                            setComments(prev => ({
+                                ...prev,
+                                [selectedTask.id]: taskComments
+                            }));
+
+                            // Load history for the selected task
+                            const taskHistory = await fetchTaskHistory(selectedTask.id);
+                            setHistory(taskHistory);
+                        } catch (error) {
+                            console.error('Error refreshing task:', error);
+                        }
+                    };
+                    
+                    refreshTask();
+                }
+            }, [selectedTask]);
+
+            const handleTaskSelect = (task) => {
+                setSelectedTask(task);
+                if (window.innerWidth <= 768) {
+                    setSidebarOpen(false);
+                }
+            };
+
+            const handleCreateTask = async () => {
+                if (!newTaskTitle.trim()) return;
+                
+                const newTask = {
+                    title: newTaskTitle,
+                    author: "Текущий пользователь",
+                    description: "Новое описание задачи",
+                    parentId: newTaskParent || null,
+                    status: "new",
+                    priority: "medium",
+                    assignee: teamMembers[0] || "Текущий пользователь"
+                };
+                
+                const createdTask = await createTask(newTask);
+                if (createdTask) {
+                    setTasks(prev => [...prev, createdTask]);
+                    setNewTaskTitle('');
+                    setNewTaskParent(null);
+                }
+            };
+
+            const handleDeleteTask = async (taskId) => {
+                const result = await deleteTask(taskId);
+                if (result) {
+                    setTasks(prev => prev.filter(task => task.id !== taskId));
+                    if (selectedTask && selectedTask.id === taskId) {
+                        setSelectedTask(tasks.length > 1 ? tasks.find(t => t.id !== taskId) : null);
+                    }
+                }
+            };
+
+            const updateTaskField = async (field, value) => {
+                if (!selectedTask) return;
+                
+                const updatedTask = await updateTask(selectedTask.id, {
+                    ...selectedTask,
+                    [field]: value
+                });
+                
+                if (updatedTask) {
+                    setTasks(prev => prev.map(task => 
+                        task.id === selectedTask.id 
+                            ? updatedTask
+                            : task
+                    ));
+                    setSelectedTask(updatedTask);
+                }
+            };
+
+            const addComment = async () => {
+                if (!newComment.trim() || !selectedTask) return;
+                
+                const commentData = {
+                    text: newComment,
+                    user: "Текущий пользователь"
+                };
+                
+                const comment = await addCommentToTask(selectedTask.id, commentData);
+                
+                if (comment) {
+                    setComments(prev => ({
+                        ...prev,
+                        [selectedTask.id]: [...(prev[selectedTask.id] || []), comment]
+                    }));
+                    
+                    setNewComment('');
+                }
+            };
+
+            const renderTaskTree = (parentId = null) => {
+                return tasks
+                    .filter(task => task.parentId === parentId)
+                    .map(task => (
+                        <div key={task.id}>
+                            <div 
+                                className={`task-item ${selectedTask?.id === task.id ? 'selected' : ''} ${parentId !== null ? 'subtask' : ''}`}
+                                onClick={() => handleTaskSelect(task)}
+                            >
+                                <div className="task-title">{task.title}</div>
+                                <div className="task-meta">
+                                    <span>{task.author}</span>
+                                    <span>{task.createdAt}</span>
+                                    <span className={`status-badge status-${task.status}`}>
+                                        {statusOptions.find(s => s.value === task.status)?.label}
+                                    </span>
+                                    <span className={`priority-badge priority-${task.priority}`}>
+                                        {priorityOptions.find(p => p.value === task.priority)?.label}
+                                    </span>
+                                </div>
+                            </div>
+                            {renderTaskTree(task.id)}
+                        </div>
+                    ));
+            };
+
+            const getStatusColor = (status) => {
+                const colors = {
+                    'new': '#2e7d32',
+                    'in-progress': '#f57f17',
+                    'completed': '#2e7d32',
+                    'blocked': '#c62828'
+                };
+                return colors[status] || '#6c757d';
+            };
+
+            const getPriorityColor = (priority) => {
+                const colors = {
+                    'low': '#2e7d32',
+                    'medium': '#f57f17',
+                    'high': '#c62828',
+                    'critical': '#b71c1c'
+                };
+                return colors[priority] || '#6c757d';
+            };
+
+            if (loading) {
+                return (
+                    <div className="app-container">
+                        <div className="content-container">
+                            <div className="empty-state">
+                                <div>⏳</div>
+                                <p>Загрузка данных...</p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="app-container">
+                    {/* Навигация */}
+                    <nav className="navbar">
+                        <button 
+                            className="menu-toggle"
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                        >
+                            ☰ Меню
+                        </button>
+                        <ul className="nav-list">
+                            {navItems.map(item => (
+                                <li key={item.name} className="nav-item">
+                                    <a 
+                                        href={item.path} 
+                                        className={`nav-link ${item.active ? 'active' : ''}`}
+                                        onClick={(e) => e.preventDefault()}
+                                    >
+                                        {item.name}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </nav>
+                    
+                    {/* Основной контент */}
+                    <div className="content-container">
+                        {/* Sidebar - Task Tree */}
+                        <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+                            <div className="sidebar-header">
+                                <h2>Дерево задач</h2>
+                            </div>
+                            
+                            <div className="controls">
+                                <div className="control-group">
+                                    <input
+                                        type="text"
+                                        placeholder="Название задачи"
+                                        value={newTaskTitle}
+                                        onChange={(e) => setNewTaskTitle(e.target.value)}
+                                    />
+                                    <button className="btn-orange" onClick={handleCreateTask}>+</button>
+                                </div>
+                                
+                                <div className="filter-group">
+                                    <select value={filter} onChange={(e) => {
+                                        setFilter(e.target.value);
+                                        setTasks([]); // Reset tasks while loading
+                                    }}>
+                                        <option value="all">Все</option>
+                                        <option value="root">Основные</option>
+                                        <option value="subtasks">Подзадачи</option>
+                                    </select>
+                                    
+                                    <select value={grouping} onChange={(e) => setGrouping(e.target.value)}>
+                                        <option value="none">Без группировки</option>
+                                        <option value="author">По автору</option>
+                                        <option value="date">По дате</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div className="task-tree">
+                                {renderTaskTree()}
+                            </div>
+                        </div>
+                        
+                        {/* Main Content - Task Details */}
+                        <div className="main-content">
+                            {selectedTask ? (
+                                <div className="task-details">
+                                    <div className="details-header">
+                                        <h1>{selectedTask.title}</h1>
+                                        <div className="details-meta">
+                                            <div className="meta-item">
+                                                <span className="meta-label">Автор</span>
+                                                <span>{selectedTask.author}</span>
+                                            </div>
+                                            <div className="meta-item">
+                                                <span className="meta-label">Создано</span>
+                                                <span>{selectedTask.createdAt}</span>
+                                            </div>
+                                            <button 
+                                                className="btn-danger"
+                                                onClick={() => handleDeleteTask(selectedTask.id)}
+                                                style={{marginLeft: 'auto'}}
+                                            >
+                                                Удалить задачу
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="details-description">
+                                        {selectedTask.description}
+                                    </div>
+                                    
+                                    <div className="form-row">
+                                        <div className="form-col">
+                                            <div className="form-group">
+                                                <label>Статус</label>
+                                                <select
+                                                    value={selectedTask.status}
+                                                    onChange={(e) => updateTaskField('status', e.target.value)}
+                                                    style={{ borderColor: getStatusColor(selectedTask.status) }}
+                                                >
+                                                    {statusOptions.map(option => (
+                                                        <option key={option.value} value={option.value}>
+                                                            {option.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="form-col">
+                                            <div className="form-group">
+                                                <label>Приоритет</label>
+                                                <select
+                                                    value={selectedTask.priority}
+                                                    onChange={(e) => updateTaskField('priority', e.target.value)}
+                                                    style={{ borderColor: getPriorityColor(selectedTask.priority) }}
+                                                >
+                                                    {priorityOptions.map(option => (
+                                                        <option key={option.value} value={option.value}>
+                                                            {option.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="form-col">
+                                            <div className="form-group">
+                                                <label>Ответственный</label>
+                                                <select
+                                                    value={selectedTask.assignee}
+                                                    onChange={(e) => updateTaskField('assignee', e.target.value)}
+                                                    className="assignee-select"
+                                                >
+                                                    {teamMembers.map(member => (
+                                                        <option key={member} value={member}>
+                                                            {member}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="history-section">
+                                        <h3>История изменений</h3>
+                                        {history.map(item => (
+                                            <div key={item.id} className="history-item">
+                                                <div className="history-meta">
+                                                    {item.user} • {item.timestamp}
+                                                </div>
+                                                <div>{item.action}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    <div className="comments-section">
+                                        <h3>Комментарии</h3>
+                                        <textarea
+                                            className="comment-input"
+                                            placeholder="Опишите процесс выполнения задачи. Можно указывать ссылки на серверы (SRV01), компьютеры (PC-ADMIN), пользователей (@ivanov) или модули (#security)"
+                                            value={newComment}
+                                            onChange={(e) => setNewComment(e.target.value)}
+                                        />
+                                        <div className="link-hint">
+                                            Поддерживаемые ссылки: серверы (SRV01), компьютеры (PC-ADMIN), пользователи (@ivanov), модули (#security)
+                                        </div>
+                                        <button className="btn-primary" onClick={addComment} style={{marginTop: '10px'}}>
+                                            Добавить комментарий
+                                        </button>
+                                        
+                                        {(comments[selectedTask.id] || []).map(comment => (
+                                            <div key={comment.id} className="history-item">
+                                                <div className="history-meta">
+                                                    {comment.user} • {comment.timestamp}
+                                                </div>
+                                                <div>{comment.text}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="empty-state">
+                                    <div>📋</div>
+                                    <p>Выберите задачу из дерева слева, чтобы просмотреть детали</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TaskManager />);
+    </script>
+</body>
+</html>
